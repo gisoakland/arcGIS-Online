@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=utf-8 />
+  <title>Image Service Load In Test</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+   <!-- Load Leaflet from CDN-->
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-1.0.0-b1/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-1.0.0-b1/leaflet.js"></script>
+
+    <!-- Load Esri Leaflet from CDN -->
+    <script src="https://cdn.jsdelivr.net/leaflet.esri/2.0.0-beta.6/esri-leaflet.js"></script>
+	<!--May not need font-awesome anymore-->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+	
+	<link rel="stylesheet" href="../esri-leaflet-geocoder-v2.0.1/dist/esri-leaflet-geocoder.css">
+    <script src="../esri-leaflet-geocoder-v2.0.1/dist/esri-leaflet-geocoder.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" />
+	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <style>
+    body { margin:0; padding:0; }
+    #map { position: absolute; top:50px; bottom:0; right:0; left:0; }
+	
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-default" style="margin:0; border:0; padding-right:0px; background-color:#FFFFFF">
+	<div class="navbar-header" style="">
+		<div class="navbar-brand" style="color:#777777">ArcGIS Online Image Service</div>
+	</div>
+	<form class="navbar-form">
+	
+	</form>
+</nav>
+<div id="map"></div>
+
+<script>
+	var map = L.map('map', {
+		center: [37.8,-122.21],
+		zoom: 12,
+		maxZoom: 21
+	});
+	
+	//Old font awesome style points
+	var redCircle = L.divIcon({
+		className: 'fa-icon',
+		html:	'<i class="fa fa-circle" style="color:red"></i>',
+		iconSize:[20,20],
+	});
+	var orangeCircle = L.divIcon({
+		className: 'fa-icon',
+		//attempting to use the stack icon feature, needs to be 1 line
+		html: 	'<span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x" style="color:black"></i><i class="fa fa-circle fa-stack-1x" style ="color:orange"></i></span>',
+		iconSize:[20,20],
+	});
+	
+	var Streets = L.esri.basemapLayer('Streets');
+	var Topographic = L.esri.basemapLayer('Topographic').addTo(map);
+	var Orthos = L.esri.imageMapLayer({
+		url: 'http://planning.mapoakland.com/oakgis/rest/services/Image_Services/Orthos2015/ImageServer'
+	}).addTo(map);
+	/*	
+		//method to remove and add layers to webpage
+		Orthos.removeFrom(map);
+		Orthos.addTo(map);
+	*/
+	
+	//URL from the restEndpoint on arcgis Online using /images/imagename.type
+	//imagename.type found under Drawing Info next to the "url":
+	var esriIcon = L.icon({
+		iconUrl:  'https://services.arcgis.com/9tC74aDHuml0x5Yz/ArcGIS/rest/services/CoreSamples/FeatureServer/0/images/RedSphere.png',
+		iconSize: [15,15],
+		iconAnchor: [0,0]
+	});
+	var coreSample = L.esri.featureLayer({
+		url: 'https://services.arcgis.com/9tC74aDHuml0x5Yz/arcgis/rest/services/CoreSamples/FeatureServer/0',
+		pointToLayer: function(geojson, latlng){
+			return L.marker(latlng, {
+				icon: esriIcon
+			});
+		},
+	}).addTo(map);
+	coreSample.bindPopup(function(event){
+		return L.Util.template('<p><h3>Core Sample</h3><hr>Lab Number:	{Lab_Number}<br>Project Number:	{Project_Nu}<br>Asphalt:	{Asphalt} in<br>Concrete:	{Concrete} in</p>', event.feature.properties);
+	});
+	console.log(coreSample);
+	
+	var masterProject = L.esri.featureLayer({
+		url: 'http://services.arcgis.com/9tC74aDHuml0x5Yz/arcgis/rest/services/Master_Projects/FeatureServer/0',
+	}).addTo(map);
+	masterProject.bindPopup(function(event){
+		return L.Util.template('<p><b>Project</b> {PROJECTNO}</p>', event.feature.properties);
+	});
+
+	var coreSampleID = new L.esri.Geocoding.FeatureLayerProvider({
+		label: 'Core Sample Lab Number',
+		url: 'https://services.arcgis.com/9tC74aDHuml0x5Yz/arcgis/rest/services/CoreSamples/FeatureServer/0/',
+		searchFields:['Lab_Number'],
+		formatSuggestion: function(feature){
+			return feature.properties.Lab_Number;
+		}
+	});
+	var arcgisOnline = L.esri.Geocoding.arcgisOnlineProvider();
+	var searchControl = L.esri.Geocoding.geosearch({
+		providers: [arcgisOnline, coreSampleID]
+	}).addTo(map);
+	var results = L.layerGroup().addTo(map);
+	//useMapBounds is bugged and does not work with integers, can't base the search around map/oakland after first search
+	searchControl.options.useMapBounds = false;
+	searchControl.on("results", function(data){
+		results.clearLayers();
+		for(var i = data.results.length -1; i >=0; i--){
+			results.addLayer(L.marker(data.results[i].latlng));
+		};
+	});
+	console.log(coreSample);
+	
+	var basemaps = {
+		"Topographic"											: Topographic,
+		"<a style='color:red'>Streets (Testing Formatting)</a>"	: Streets, //demonstrating html styling for the basemaps (we can add buttons)
+		"Blank"													: L.tileLayer(''),
+	};
+	var layers = {
+		"Master Project"										: masterProject,
+		"Core Samples"											: coreSample,
+		"Orthos"												: Orthos,
+	};
+	L.control.layers(basemaps, layers).addTo(map);
+	
+</script>
+
+</body>
+</html>
