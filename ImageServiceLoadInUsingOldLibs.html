@@ -56,8 +56,9 @@
 	//Can only use ONE esriBasemapLayer, seems to be a bug somewhere that was fixed in 1.0
 	var Topographic = L.esri.basemapLayer('Topographic');
 	var Orthos = L.esri.imageMapLayer({
-		url: 'http://planning.mapoakland.com/oakgis/rest/services/Image_Services/Orthos2015/ImageServer'
-	});
+		url: 'http://planning.mapoakland.com/oakgis/rest/services/Image_Services/Orthos2015/ImageServer',
+		position: "back"
+	}).addTo(map);
 	var styles = [
 	  {
 		"stylers": [
@@ -72,7 +73,9 @@
 	  }
 	];
 	var googleLayer = new L.Google('ROADMAP', {mapOptions: { styles:styles }});
+	console.log(googleLayer);
 	map.addLayer(googleLayer);
+	console.log(googleLayer);
 	<!--Basemaps End-->
 	<!--Layers Start-->
 	//URL from the restEndpoint on arcgis Online using /images/imagename.type
@@ -124,6 +127,7 @@
 		};
 	});
 	<!--Search Controls End-->
+	
 
 	var basemaps = {
 		"Google"												: googleLayer,
@@ -131,9 +135,10 @@
 		"Blank"													: L.tileLayer(''),
 	};
 	var layers = {
+		"Orthos"												: Orthos,
 		"Master Project"										: masterProject,
 		"Core Samples"											: coreSample,
-		"Orthos"												: Orthos,
+		
 	};
 	L.control.layers(basemaps, layers).addTo(map);
 </script>

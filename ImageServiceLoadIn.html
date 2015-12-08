@@ -65,11 +65,6 @@
 	var Orthos = L.esri.imageMapLayer({
 		url: 'http://planning.mapoakland.com/oakgis/rest/services/Image_Services/Orthos2015/ImageServer'
 	}).addTo(map);
-	/*	
-		//method to remove and add layers to webpage
-		Orthos.removeFrom(map);
-		Orthos.addTo(map);
-	*/
 	
 	//URL from the restEndpoint on arcgis Online using /images/imagename.type
 	//imagename.type found under Drawing Info next to the "url":
@@ -121,25 +116,7 @@
 	});
 	console.log(coreSample);
 	
-	var styles = [
-	  {
-		"stylers": [
-		  { "visibility": "off" }
-		]
-	  },{
-		"featureType": "water",
-		"stylers": [
-		  { "visibility": "simplified" }
-		]
-	  },{
-	  }
-	];
-	var googleLayer = new L.Google('ROADMAP', {mapOptions: { styles:styles }});
-	console.log(googleLayer);
-	console.log(map);
 
-	//map.addLayer(googleLayer);
-	//var styledMap = new google.maps.StyledMapType(styles, {name:"Water"});
 	
 	var basemaps = {
 		"Topographic"											: Topographic,
